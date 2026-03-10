@@ -14,7 +14,8 @@ requests>=2.32.2
 scipy>=1.4.1
 thop>=0.1.1
 
-torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu
+torch>=2.10.0
+torchvision>=0.21.0
 torchvision==0.17.2 --index-url https://download.pytorch.org/whl/cpu
 
 tqdm>=4.66.3
