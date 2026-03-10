@@ -1,0 +1,16 @@
+# Dataset paths
+train: /content/drive/My Drive/yolov5-master/dataset/train/img
+val : /content/drive/My Drive/yolov5-master/dataset/val/img
+
+# Number of classes
+nc: 6
+
+# Class names
+names:
+  0: broken streetlight
+  1: damaged footpath sidewalk
+  2: flood
+  3: garbage
+  4: open manhole
+  5: sewageleak
+  6: waterleakage
