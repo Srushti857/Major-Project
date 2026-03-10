@@ -19,9 +19,16 @@
                         and prioritizes community problems, ensuring faster resolution and transparent tracking.
                     </p>
                     <div class="d-flex flex-wrap gap-3">
-                        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg px-5 py-3 rounded-3 fw-bold hover-lift">
+                        
+                        {% if 'email' in session %}
+                        <a href="{{ url_for('complaint') }}" class="btn btn-primary btn-lg px-5 py-3 rounded-3 fw-bold hover-lift">
                             <i class="bi bi-plus-circle me-2"></i>Report Issue
                         </a>
+                        {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg px-5 py-3 rounded-3 fw-bold hover-lift">
+                            <i class="bi bi-plus-circle me-2"></i>Report Issue
+                        </a>
+                        {% endif %}
                         <a href="#features" class="btn btn-outline-dark btn-lg px-5 py-3 rounded-3 fw-bold hover-lift">
                             <i class="bi bi-play-circle me-2"></i>See How It Works
                         </a>
