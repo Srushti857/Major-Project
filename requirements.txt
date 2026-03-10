@@ -1,18 +1,11 @@
-# Minimal requirements for YOLO deployment
-
 flask
+gunicorn
 ultralytics>=8.2.34
-
-# Image processing
 opencv-python-headless
 numpy
 pillow
-
-# PyTorch (compatible with Python 3.13)
-torch>=2.10.0
-torchvision>=0.21.0
-
-# Utilities
+torch==2.3.1+cpu
+torchvision==0.18.1+cpu
 PyYAML
 requests
 tqdm
