@@ -6,19 +6,30 @@ import sqlite3
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'wverihdfuvuwi2482'
+
+app.secret_key = "supersecretkey"
+
+# Fix session issues on mobile browsers
+app.config['SESSION_COOKIE_SAMESITE'] = "Lax"
+app.config['SESSION_COOKIE_SECURE'] = False
+
+# Limit upload size (16MB)
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 
-app.config['DATABASE'] = 'database.db'
-app.config['COMPLAINT_UPLOAD_FOLDER'] = 'static/uploads/complaints'
+app.config['DATABASE'] = os.path.join(os.path.dirname(__file__), 'database.db')
+
+# Fixed upload folder path for deployment
+app.config['COMPLAINT_UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'static', 'uploads', 'complaints')
 os.makedirs(app.config['COMPLAINT_UPLOAD_FOLDER'], exist_ok=True)
-app.config['PROFILE_UPLOAD_FOLDER'] = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'profiles')
+
+app.config['PROFILE_UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'static', 'profiles')
 os.makedirs(app.config['PROFILE_UPLOAD_FOLDER'], exist_ok=True)
 
 
 def get_db_connection():
    
-    conn = sqlite3.connect(app.config['DATABASE'])
+    conn = sqlite3.connect(app.config['DATABASE'], check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -51,11 +62,13 @@ def init_db():
         ''')
     conn.close()
 
+
 def allowed_file(filename, filetype):
     if filetype == 'image':
         allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
     return False
+
 
 @app.context_processor
 def inject_current_year():
@@ -66,7 +79,6 @@ def inject_current_year():
 def index():
    
     return render_template('index.html',  title="Home")
-
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -81,7 +93,7 @@ def register():
 
         filename = None
         if profile_image and allowed_file(profile_image.filename, 'image'):
-            filename = secure_filename(profile_image.filename)
+            filename = f"{datetime.now().timestamp()}_{secure_filename(profile_image.filename)}"
             image_path = os.path.join(app.config['PROFILE_UPLOAD_FOLDER'], filename)
             profile_image.save(image_path)
         else:
@@ -129,11 +141,9 @@ def login():
     return render_template('login.html', title="Login")
 
 
-
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
     return render_template('contact.html')
-
 
 
 @app.route('/profile')
@@ -170,7 +180,7 @@ def complaint():
 
         filename = None
         if complaint_image and allowed_file(complaint_image.filename, 'image'):
-            filename = secure_filename(complaint_image.filename)
+            filename = f"{datetime.now().timestamp()}_{secure_filename(complaint_image.filename)}"
             image_path = os.path.join(app.config['COMPLAINT_UPLOAD_FOLDER'], filename)
             complaint_image.save(image_path)
         else:
@@ -181,7 +191,6 @@ def complaint():
         conn.execute(
             '''
             INSERT INTO complients (title, description, image_path, user_email)
-
             VALUES (?, ?, ?, ?)
             ''',
             (title, description, filename, session['email'])
@@ -203,16 +212,15 @@ def my_complaints():
 
     conn = get_db_connection()
     complaints = conn.execute(
-    "SELECT * FROM complients WHERE user_email = ?",
-    (session['email'],)
-).fetchall()
+        "SELECT * FROM complients WHERE user_email = ?",
+        (session['email'],)
+    ).fetchall()
 
     conn.close()
 
     return render_template('my_complaints.html', complaints=complaints, title="My Complaints")
 
 
-## Admin Routes
 @app.route('/admin_dashboard')
 def admin_dashboard():
     if 'email' not in session or session.get('role') != 'admin':
@@ -229,7 +237,6 @@ def admin_dashboard():
     return render_template('admin_dashboard.html',
                            total_users=total_users,
                            total_complaints=total_complaints,
-                          
                            title="Admin Dashboard")
 
 
@@ -285,6 +292,7 @@ def admin_complaints():
 
     return render_template('admin_complaints.html', complaints=complaints, title="Admin Complaints")
 
+
 @app.route('/admin/complaint/edit/<int:complaint_id>', methods=['GET', 'POST'])
 def admin_complaint_edit(complaint_id):
     if 'email' not in session or session.get('role') != 'admin':
@@ -332,21 +340,18 @@ def delete_complaint(complaint_id):
     return redirect(url_for('admin_complaints'))
 
 
-
 @app.template_filter('time_ago')
 def time_ago(value):
-    """
-    Converts datetime or datetime-string to 'x minutes ago'
-    """
+
     if not value:
         return ''
 
-  
     if isinstance(value, str):
         try:
             value = datetime.fromisoformat(value)
         except ValueError:
             return value 
+
     now = datetime.now()
     diff = now - value
 
@@ -366,9 +371,13 @@ def time_ago(value):
 
 @app.route('/logout')
 def logout():
-    session.clear()
+    session.pop('email', None)
+    session.pop('name', None)
+    session.pop('role', None)
+
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
+
 
 if __name__ == "__main__":
     init_db()
